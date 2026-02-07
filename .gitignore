@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDE files
+.idea/
+.vscode/
+
+# Poetry lock
+poetry.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
