@@ -12,9 +12,6 @@ venv/
 .idea/
 .vscode/
 
-# Poetry lock
-poetry.lock
-
 # OS files
 .DS_Store
 Thumbs.db
