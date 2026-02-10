@@ -1,20 +1,16 @@
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
+# Node modules
+node_modules/
 
-# Virtual environments
+# Prettier cache
+node_modules/.cache/
+
+# Python build artifacts
+build/
+dist/
 .venv/
-env/
 venv/
+*.pyc
+__pycache__/
 
-# IDE files
-.idea/
-.vscode/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+# Sphinx build
+docs/_build/
