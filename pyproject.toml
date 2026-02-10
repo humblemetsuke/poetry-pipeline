@@ -1,45 +1,57 @@
-[project]
+# ============================================================
+# Poetry project configuration (classic [tool.poetry] format)
+# Compatible with Commitizen automatic version bumping
+# ============================================================
+
+[tool.poetry]
 name = "poetry-pipeline"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Tony Narloch",email = "tnarloch@hotmail.co.uk"}
-]
+authors = ["Tony Narloch <tnarloch@hotmail.co.uk>"]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
-dependencies = [
-    "fastapi (>=0.128.4,<0.129.0)",
-    "uvicorn (>=0.40.0,<0.41.0)"
-]
+packages = [{ include = "poetry_pipeline" }]
 
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = ">=0.128.4,<0.129.0"
+uvicorn = ">=0.40.0,<0.41.0"
+structlog = "^25.5.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = ">=4.5.1,<5.0.0"
+black = ">=26.1.0,<27.0.0"
+ruff = ">=0.15.0,<0.16.0"
+isort = ">=7.0.0,<8.0.0"
+prettier = ">=0.0.7,<0.0.8"
+flake8 = ">=7.3.0,<8.0.0"
+mypy = ">=1.19.1,<2.0.0"
+radon = ">=6.0.1,<7.0.0"
+vulture = ">=2.14,<3.0"
+pylint = ">=4.0.4,<5.0.0"
+bandit = ">=1.9.3,<2.0.0"
+commitizen = ">=4.13.6,<5.0.0"
+astroid = ">=4.0.4,<5.0.0"
+wrapt = ">=1.14.0,<2"
+sphinx = ">=9.1.0,<10.0.0"
+poetry-dynamic-versioning = ">=1.9.1,<2.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "pre-commit (>=4.5.1,<5.0.0)",
-    "black (>=26.1.0,<27.0.0)",
-    "ruff (>=0.15.0,<0.16.0)",
-    "isort (>=7.0.0,<8.0.0)",
-    "prettier (>=0.0.7,<0.0.8)",
-    "flake8 (>=7.3.0,<8.0.0)",
-    "mypy (>=1.19.1,<2.0.0)",
-    "radon (>=6.0.1,<7.0.0)",
-    "vulture (>=2.14,<3.0)",
-    "pylint (>=4.0.4,<5.0.0)",
-    "bandit (>=1.9.3,<2.0.0)",
-    "commitizen (>=4.13.6,<5.0.0)",
-    "astroid (>=4.0.4,<5.0.0)",
-    "wrapt (>=1.14.0,<2)",
-    "sphinx (>=9.1.0,<10.0.0)"
-]
-
+# -------------------------
+# Commitizen configuration
+# -------------------------
 [tool.commitizen]
 name = "cz_conventional_commits"
+version_provider = "poetry-dynamic"
 tag_format = "$version"
-version_scheme = "semver"
-version_provider = "poetry"
 update_changelog_on_bump = true
 major_version_zero = true
+changelog_file = "CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
+]
