@@ -43,7 +43,7 @@ build-backend = "poetry.core.masonry.api"
 # -------------------------
 [tool.commitizen]
 name = "cz_conventional_commits"
-version_provider = "poetry"
+version_provider = "poetry-dynamic"
 tag_format = "$version"
 update_changelog_on_bump = true
 major_version_zero = true
