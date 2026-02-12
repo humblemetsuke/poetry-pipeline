@@ -11,6 +11,7 @@ dist/
 venv/
 *.pyc
 __pycache__/
+.idea/
 
 # Sphinx build
 docs/_build/
