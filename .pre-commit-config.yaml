@@ -101,11 +101,11 @@ repos:
         name: Detect unused code with Vulture
         entry: poetry run vulture
         language: system
+        pass_filenames: true # scan only staged files
+        types: [python] # Only runs on Python files
         args:
-          - .
           - --exclude
-          - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache
-        pass_filenames: false
+          - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml,vulture-whitelist.txt
 
   # -------------------------
   # Security scanning
