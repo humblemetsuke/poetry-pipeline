@@ -46,3 +46,14 @@ USER appuser
 # Set working directory
 # ---------------------------
 WORKDIR /app
+
+
+# ---------------------------
+# Install Poetry
+# ---------------------------
+
+# --no-cache-dir ensures pip does not store temp files in /root/.cache.
+# Necessary to keep container clean and reduce bloat.
+# poetry==1.7.0 is pinned, ensuring maximum reproducibility.
+
+RUN pip install --no-cache-dir poetry==1.7.0
