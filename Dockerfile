@@ -72,3 +72,10 @@ COPY pyproject.toml poetry.lock* ./
 # --no-interaction ensures full automation and --no-ansi keeps logs CI/CD friendly.
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi
+
+
+# ---------------------------
+# Copy application code
+# ---------------------------
+# Only copy app/ folder to reduce attack surface and image size
+COPY app ./app
