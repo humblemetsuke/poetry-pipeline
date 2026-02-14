@@ -94,7 +94,7 @@ EXPOSE 8000
 
 # HEALTHCHECK runs a healthcheck every 30 seconds to ensure the container is working.
 # If the container does not respond to a request from HEALTHCHECK, consider this a fail state.
-# --start-period=10s means that 10 seconds must elapse from the second the cotainer starts up.
+# --start-period=10s means that 10 seconds must elapse from the second the container starts up.
 # curl -f http://localhost:8000/health  calls the FastAPI health endpoint.
 # If error code 1 is returned, then consider container unhealthy.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
