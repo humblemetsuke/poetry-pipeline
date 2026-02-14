@@ -79,3 +79,10 @@ RUN poetry config virtualenvs.create false \
 # ---------------------------
 # Only copy app/ folder to reduce attack surface and image size
 COPY app ./app
+
+# ---------------------------
+# Expose necessary port
+# ---------------------------
+
+# Advises other services (Kubernetes, Composer, other containers) how to interact with said container.
+EXPOSE 8000
