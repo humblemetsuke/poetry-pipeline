@@ -41,3 +41,8 @@ ENV POETRY_NO_ANSI=1
 
 RUN useradd -m appuser
 USER appuser
+
+# ---------------------------
+# Set working directory
+# ---------------------------
+WORKDIR /app
