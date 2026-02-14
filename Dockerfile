@@ -30,6 +30,9 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 # Eliminates need for user input, allowing for full automation.
 ENV POETRY_NO_INTERACTION=1
 
+# Disables coloured output from Poetry. Keeps CI/CD logs predictable.
+ENV POETRY_NO_ANSI=1
+
 # ---------------------------
 # Add non-root user (security)
 # ---------------------------
