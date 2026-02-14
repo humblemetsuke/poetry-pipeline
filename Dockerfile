@@ -57,3 +57,18 @@ WORKDIR /app
 # poetry==1.7.0 is pinned, ensuring maximum reproducibility.
 
 RUN pip install --no-cache-dir poetry==1.7.0
+
+# ---------------------------
+# Dependency caching
+# ---------------------------
+# Only pyproject.toml and poetry.lock are installed only if they change, speeding up installation.
+# poetry.lock is used to pin the version, again maximimising reproducibility.
+
+COPY pyproject.toml poetry.lock* ./
+
+
+
+# Disable virtualenv creation inside container, install only production deps
+# --no-interaction ensures full automation and --no-ansi keeps logs CI/CD friendly.
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev --no-interaction --no-ansi
