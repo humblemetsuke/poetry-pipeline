@@ -19,7 +19,7 @@ FROM python@sha256:0b23cfb7425d065008b778022a17b1551c82f8b4866ee5a7a200084b7e2ea
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Flushes output instantly, eliminates delays, aids in debugging.
-ENV PYTHONBUFFERED=1
+ENV PYTHONUNBUFFERED=1
 
 # Assigns environment variable, signifying container is in production mode.
 ENV ENVIRONMENT=production
