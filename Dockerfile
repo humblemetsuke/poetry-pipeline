@@ -34,19 +34,9 @@ ENV POETRY_NO_INTERACTION=1
 ENV POETRY_NO_ANSI=1
 
 # ---------------------------
-# Add non-root user (security)
-# ---------------------------
-
-# Stripping root access minimises harm by malicious user.
-
-RUN useradd -m appuser
-USER appuser
-
-# ---------------------------
 # Set working directory
 # ---------------------------
 WORKDIR /app
-
 
 # ---------------------------
 # Install Poetry
@@ -81,6 +71,17 @@ RUN poetry config virtualenvs.create false \
 COPY app ./app
 
 # ---------------------------
+# Add non-root user (security)
+# ---------------------------
+
+
+# Stripping root access minimises harm by malicious user.
+# Place non-root user after poetry and dependencies installation removes potential permission issues.
+
+RUN useradd -m appuser
+USER appuser
+
+# ---------------------------
 # Expose necessary port
 # ---------------------------
 
@@ -99,3 +100,13 @@ EXPOSE 8000
 # If error code 1 is returned, then consider container unhealthy.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD curl -f http://localhost:8000/health || exit 1
+
+# ======================
+# Run FastAPI app
+# ======================
+
+# CMD actually states the arguments for execution when the container starts.
+# Multiple workers was not included. Having one process per container keeps things clean.
+# One process per container also assists in observability metrics, and orchestration.
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
