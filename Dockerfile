@@ -30,6 +30,11 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 # Eliminates need for user input, allowing for full automation.
 ENV POETRY_NO_INTERACTION=1
 
+# ---------------------------
+# Add non-root user (security)
+# ---------------------------
 
+# Stripping root access minimises harm by malicious user.
 
-ENV POETRY_NO_ANSI=1
+RUN useradd -m appuser
+USER appuser
