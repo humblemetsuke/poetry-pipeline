@@ -2,5 +2,5 @@ read_root
 health
 env
 app/main.py:read_root
-app/main.py:health
+app/main.py:health_check
 app/main.py:env
