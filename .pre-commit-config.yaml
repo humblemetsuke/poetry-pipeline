@@ -103,8 +103,6 @@ repos:
         language: system
         pass_filenames: false
         args:
-          - --ignore-names
-          - read_root,create_item,update_item,delete_item
           - --exclude
           - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
           - .
