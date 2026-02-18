@@ -109,7 +109,7 @@ repos:
           - "-r"
           - "."
           - "-x"
-          - ".venv,venv,build,dist,.mypy_cache,.pytest_cache"
+          - ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests"
         pass_filenames: false
 
   # -------------------------
