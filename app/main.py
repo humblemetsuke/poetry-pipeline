@@ -1,10 +1,11 @@
 import logging
 import os
 import socket
+import time
 from logging.handlers import RotatingFileHandler
 
 import structlog
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 ENV = os.getenv("ENVIRONMENT", "dev")
 # -----------------------------
@@ -55,6 +56,17 @@ logger.info("Logging setup complete! Both file and console active.")
 # FastAPI app
 # -----------------------------
 app = FastAPI()
+
+
+# Dependency that handles delay
+def delay_function():
+    time.sleep(5)
+
+
+@app.get("/slow")
+def slow_endpoint(delay=Depends(lambda: delay_function())):
+
+    return {"status": "slow response"}
 
 
 @app.get("/")
