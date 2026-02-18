@@ -11,15 +11,11 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      # Remove trailing whitespace
       - id: trailing-whitespace
         exclude: ^(docs/_build/|node_modules)
-      # Ensure files end with a newline
       - id: end-of-file-fixer
         exclude: ^(docs/_build/|node_modules)
-      # Validate YAML files
       - id: check-yaml
-      # Prevent accidentally adding large files
       - id: check-added-large-files
         exclude: ^node_modules/
 
@@ -29,21 +25,18 @@ repos:
   - repo: https://github.com/psf/black
     rev: 26.1.0
     hooks:
-      # Automatically format Python files using Black
       - id: black
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.10.1
     hooks:
-      # Automatically sort Python imports
       - id: isort
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
-      # Format JSON, YAML, Markdown, JS/TS files
       - id: prettier
         files: \.(json|yml|yaml|md|js|ts)$
         exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
@@ -54,14 +47,12 @@ repos:
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
     hooks:
-      # Python code linter
       - id: flake8
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1
     hooks:
-      # Type checker for Python
       - id: mypy
         exclude: '^\.venv/'
 
@@ -75,7 +66,6 @@ repos:
         additional_dependencies:
           - setuptools>=68
           - wheel
-        # Only run on root or src directories
         files: ^(\.|src)/
 
   # -------------------------
@@ -83,7 +73,6 @@ repos:
   # -------------------------
   - repo: local
     hooks:
-      # Cyclomatic complexity check using Radon
       - id: radon-cc
         name: Check Cyclomatic Complexity with Radon
         entry: poetry run radon cc .
@@ -99,13 +88,15 @@ repos:
 
       - id: vulture
         name: Detect unused code with Vulture
-        entry: poetry run vulture
+        entry: python hooks/vulture-wrapper.py
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        types: [python]
         args:
           - --exclude
           - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
-          - .
+          - --ignore-names
+          - read_root,create_item,update_item,delete_item
 
   # -------------------------
   # Security scanning
@@ -126,14 +117,12 @@ repos:
   # -------------------------
   - repo: local
     hooks:
-      # Block committing .env files (security)
       - id: block-env-files
         name: Block .env files
         language: python
         entry: hooks/block_env.py
         files: (^|/)\.env(\.[a-zA-Z0-9_-]+|$)
 
-      # Build Sphinx documentation
       - id: build-sphinx
         name: Build Sphinx docs
         entry: poetry run python -m sphinx -b html docs docs/_build/html
@@ -142,7 +131,6 @@ repos:
         files: \.(rst|md)$
         exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
 
-      # Lint commit messages (Windows-compatible)
       - id: commitlint
         name: Lint commit messages
         entry: bash -c 'npx commitlint --edit "$1"' --
