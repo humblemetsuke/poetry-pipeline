@@ -105,7 +105,7 @@ repos:
         types: [python]
         args:
           - --whitelist
-          - --vulture-whitelist.txt
+          - vulture-whitelist.txt
           - --exclude
           - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
           - --ignore-names
