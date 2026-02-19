@@ -188,3 +188,11 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push] # scan dependencies before pushing image
+
+      - id: cosign-sign
+        name: Sign Docker image with Cosign
+        entry: cosign sign --key cosign.key my-image:latest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        # Cryptographically signs the Docker image to ensure integrity before pushing
