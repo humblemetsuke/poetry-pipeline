@@ -19,7 +19,7 @@ repos:
         # Validate YAML files to prevent syntax errors
       - id: check-added-large-files
         # Warn if adding very large files to prevent bloated repo
-        exclude: ^node_modules/
+        exclude: ^(node_modules|\.bandit-baseline\.json)
 
   # -------------------------
   # Code formatting
