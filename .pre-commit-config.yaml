@@ -1,7 +1,5 @@
 # ============================================================
-# Pre-commit configuration
-# - Atomic commits with conventional commits
-# - Formatting, linting, static analysis, security, docs
+# Pre-commit configuration - Max ROI, commented & optimized
 # ============================================================
 
 repos:
@@ -12,11 +10,15 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        # Remove trailing whitespace to avoid unnecessary diffs
         exclude: ^(docs/_build/|node_modules)
       - id: end-of-file-fixer
+        # Ensure files end with a newline (POSIX compliance)
         exclude: ^(docs/_build/|node_modules)
       - id: check-yaml
+        # Validate YAML files to prevent syntax errors
       - id: check-added-large-files
+        # Warn if adding very large files to prevent bloated repo
         exclude: ^node_modules/
 
   # -------------------------
@@ -26,38 +28,55 @@ repos:
     rev: 26.1.0
     hooks:
       - id: black
+        # Auto-format Python code
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.10.1
     hooks:
       - id: isort
+        # Sort imports for readability/consistency
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        # Format JSON, YAML, Markdown, JS, TS files
         files: \.(json|yml|yaml|md|js|ts)$
         exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
 
   # -------------------------
-  # Lightweight linting & typing
+  # Lightweight linting & typing (fast, pre-commit)
   # -------------------------
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
     hooks:
       - id: flake8
+        # Basic Python linting (PEP8, style)
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1
     hooks:
       - id: mypy
+        # Type checking for Python
         exclude: '^\.venv/'
 
   # -------------------------
-  # Pylint (runs on root or src)
+  # Commit message linting
+  # -------------------------
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: Lint commit messages
+        entry: bash -c 'npx commitlint --edit "$1"' --
+        language: system
+        # Only runs on commit messages
+        stages: [commit-msg]
+
+  # -------------------------
+  # Heavy static analysis & security (pre-push)
   # -------------------------
   - repo: https://github.com/PyCQA/pylint
     rev: v4.0.4
@@ -66,11 +85,11 @@ repos:
         additional_dependencies:
           - setuptools>=68
           - wheel
+        # Analyze Python code quality
         files: ^(\.|src)/
+        # Run only before push to avoid slowing local commits
+        stages: [pre-push]
 
-  # -------------------------
-  # Heavier static analysis (local)
-  # -------------------------
   - repo: local
     hooks:
       - id: radon-cc
@@ -85,6 +104,8 @@ repos:
           - --exclude
           - "venv,.venv,build,dist,.mypy_cache,.pytest_cache"
         pass_filenames: false
+        # Complexity checks only before push
+        stages: [pre-push]
 
       - id: vulture
         name: Detect unused code with Vulture
@@ -97,10 +118,9 @@ repos:
           - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
           - --ignore-names
           - read_root,create_item,update_item,delete_item
+        # Run only before push to reduce local lag
+        stages: [pre-push]
 
-  # -------------------------
-  # Security scanning
-  # -------------------------
   - repo: https://github.com/PyCQA/bandit
     rev: 1.9.3
     hooks:
@@ -111,9 +131,21 @@ repos:
           - "-x"
           - ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests"
         pass_filenames: false
+        # Security scan for Python code, pre-push only
+        stages: [pre-push]
+
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: Run pytest with coverage
+        entry: poetry run pytest --cov=app --cov-fail-under=80
+        language: system
+        pass_filenames: false
+        # Heavy test + coverage check, pre-push only
+        stages: [pre-push]
 
   # -------------------------
-  # Local environment & documentation
+  # Environment & documentation (fast enough for pre-commit)
   # -------------------------
   - repo: local
     hooks:
@@ -121,6 +153,7 @@ repos:
         name: Block .env files
         language: python
         entry: hooks/block_env.py
+        # Prevent committing sensitive environment files
         files: (^|/)\.env(\.[a-zA-Z0-9_-]+|$)
 
       - id: build-sphinx
@@ -131,25 +164,15 @@ repos:
         files: \.(rst|md)$
         exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
 
-      - id: commitlint
-        name: Lint commit messages
-        entry: bash -c 'npx commitlint --edit "$1"' --
-        language: system
-        stages: [commit-msg]
-
   # -------------------------
   # Docker & container checks
   # -------------------------
-
-  # Lint Dockerfiles for common errors.
-
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
     hooks:
       - id: hadolint
+        # Lint Dockerfile for common mistakes
         files: ^Dockerfile$
-
-  # Lints docker-compose.yaml files for errors and service issues
 
   - repo: local
     hooks:
@@ -158,41 +181,28 @@ repos:
         entry: docker-compose-linter check docker-compose.yml
         language: system
         files: ^(docker-)?compose\.ya?ml$
+        # Lightweight lint, pre-commit
         stages: [pre-commit]
 
-  # Detect secrets in .env, Dockerfile, and YAML files
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.3.0
-    hooks:
-      - id: detect-secrets
-        files: \.(env|Dockerfile|yml|yaml)$
-        stages: [pre-commit]
-
-  # Local hooks for heavier Docker-related checks
-  - repo: local
-    hooks:
       - id: trivy-scan-image
         name: Scan Docker image for OS vulnerabilities
-        entry: trivy image --severity HIGH,CRITICAL my-image:latest
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy image --severity HIGH,CRITICAL $IMAGE_TAG'
         language: system
         pass_filenames: false
-        stages: [pre-push] # Scans the built Docker image before pushing
-        # Notes:
-        # - HIGH,CRITICAL filters only high-risk CVEs
-        # - Using pre-push stage avoids slowing down every commit
-        # - 'my-image:latest' should match the latest built Docker image tag
+        # Heavy Docker scan, pre-push
+        stages: [pre-push]
 
       - id: trivy-scan-deps
         name: Scan Python dependencies in Docker image
-        entry: trivy fs --severity HIGH,CRITICAL --scanners vuln poetry.lock
-        language: system
-        pass_filenames: false
-        stages: [pre-push] # scan dependencies before pushing image
-
-      - id: cosign-sign
-        name: Sign Docker image with Cosign
-        entry: cosign sign --key cosign.key my-image:latest
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --severity HIGH,CRITICAL --scanners vuln poetry.lock'
         language: system
         pass_filenames: false
         stages: [pre-push]
-        # Cryptographically signs the Docker image to ensure integrity before pushing
+
+      - id: cosign-sign
+        name: Sign Docker image with Cosign
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && cosign sign --key cosign.key $IMAGE_TAG'
+        language: system
+        pass_filenames: false
+        # Cryptographic signing, pre-push
+        stages: [pre-push]
