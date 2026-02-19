@@ -136,3 +136,15 @@ repos:
         entry: bash -c 'npx commitlint --edit "$1"' --
         language: system
         stages: [commit-msg]
+
+  # -------------------------
+  # Docker & container checks
+  # -------------------------
+
+  # Lint Dockerfiles for common errors
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+        files: ^Dockerfile$
