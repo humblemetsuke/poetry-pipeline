@@ -141,10 +141,21 @@ repos:
   # Docker & container checks
   # -------------------------
 
-  # Lint Dockerfiles for common errors
+  # Lint Dockerfiles for common errors.
 
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
     hooks:
       - id: hadolint
         files: ^Dockerfile$
+
+  # Lints docker-compose.yaml files for errors and service issues
+
+  - repo: local
+    hooks:
+      - id: compose-lint
+        name: Lint docker-compose files
+        entry: docker-compose-linter check docker-compose.yml
+        language: system
+        files: ^(docker-)?compose\.ya?ml$
+        stages: [pre-commit]
