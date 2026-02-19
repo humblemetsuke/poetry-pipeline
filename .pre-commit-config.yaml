@@ -130,6 +130,8 @@ repos:
           - "."
           - "-x"
           - ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests"
+          - "--baseline"
+          - ".bandit-baseline.json"
         pass_filenames: false
         # Security scan for Python code, pre-push only
         stages: [pre-push]
