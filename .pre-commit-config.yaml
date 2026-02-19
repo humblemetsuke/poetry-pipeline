@@ -131,7 +131,7 @@ repos:
           - "-x"
           - ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests"
           - "--baseline"
-          - ".bandit-baseline.json"
+          - ".bandit-baseline.json" # tells Bandit: ignore previously reported issues.
         pass_filenames: false
         # Security scan for Python code, pre-push only
         stages: [pre-push]
@@ -188,7 +188,7 @@ repos:
 
       - id: trivy-scan-image
         name: Scan Docker image for OS vulnerabilities
-        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy image --severity HIGH,CRITICAL $IMAGE_TAG'
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'
         language: system
         pass_filenames: false
         # Heavy Docker scan, pre-push
@@ -196,7 +196,7 @@ repos:
 
       - id: trivy-scan-deps
         name: Scan Python dependencies in Docker image
-        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --severity HIGH,CRITICAL --scanners vuln poetry.lock'
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy image --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL $IMAGE_TAG'
         language: system
         pass_filenames: false
         stages: [pre-push]
