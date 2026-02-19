@@ -167,3 +167,17 @@ repos:
       - id: detect-secrets
         files: \.(env|Dockerfile|yml|yaml)$
         stages: [pre-commit]
+
+  # Local hooks for heavier Docker-related checks
+  - repo: local
+    hooks:
+      - id: trivy-scan-image
+        name: Scan Docker image for OS vulnerabilities
+        entry: trivy image --severity HIGH,CRITICAL my-image:latest
+        language: system
+        pass_filenames: false
+        stages: [pre-push] # Scans the built Docker image before pushing
+        # Notes:
+        # - HIGH,CRITICAL filters only high-risk CVEs
+        # - Using pre-push stage avoids slowing down every commit
+        # - 'my-image:latest' should match the latest built Docker image tag
