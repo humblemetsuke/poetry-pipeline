@@ -159,3 +159,11 @@ repos:
         language: system
         files: ^(docker-)?compose\.ya?ml$
         stages: [pre-commit]
+
+  # Detect secrets in .env, Dockerfile, and YAML files
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.3.0
+    hooks:
+      - id: detect-secrets
+        files: \.(env|Dockerfile|yml|yaml)$
+        stages: [pre-commit]
