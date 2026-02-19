@@ -181,3 +181,10 @@ repos:
         # - HIGH,CRITICAL filters only high-risk CVEs
         # - Using pre-push stage avoids slowing down every commit
         # - 'my-image:latest' should match the latest built Docker image tag
+
+      - id: trivy-scan-deps
+        name: Scan Python dependencies in Docker image
+        entry: trivy fs --severity HIGH,CRITICAL --scanners vuln poetry.lock
+        language: system
+        pass_filenames: false
+        stages: [pre-push] # scan dependencies before pushing image
