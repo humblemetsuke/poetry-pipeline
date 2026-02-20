@@ -18,16 +18,20 @@ env:
   # =============================
 
 jobs:
-  build-and-test:
+  validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
     steps:
-      - name: checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11, 3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: setup poetry
         run: pip install poetry
