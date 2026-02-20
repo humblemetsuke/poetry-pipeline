@@ -51,3 +51,10 @@ jobs:
 
       - name: build docker image
         run: docker build -t $IMAGE_NAME:ci .
+
+      - name: generate SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+          ./syft $IMAGE_NAME:ci -o json > sbom.json
+
+      - name
