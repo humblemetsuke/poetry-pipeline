@@ -15,3 +15,7 @@ __pycache__/
 
 # Sphinx build
 docs/_build/
+
+# Coverage reports
+
+.coverage
