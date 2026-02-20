@@ -87,3 +87,11 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest .
+
+      - name: Tag Docker image with Git commit SHA
+        run: docker tag $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
+
+      - name: Push Docker image
+        run: |
+          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest
+          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
