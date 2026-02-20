@@ -95,3 +95,9 @@ jobs:
         run: |
           docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest
           docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
+
+      - name: automatic version bump + tag
+        run: |
+          pip install commitizen
+          poetry run cz bump --yes
+          git push --follow-tags
