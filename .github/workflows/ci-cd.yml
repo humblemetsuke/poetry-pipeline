@@ -1,0 +1,47 @@
+name: CI/CD pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: poetry-pipeline
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_REPOSITORY: ${{ github.repository }}
+
+  # ==============================
+  # Lint, Test, Coverage and SBOM
+  # =============================
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11, 3.12"
+
+      - name: setup poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: run pre-commit hooks
+        run: poetry run pre-commit run --all-files
+
+      - name: run tests with coverage
+        run: |
+          poetry run pytest \
+            --cov=app \
+            --cov-report=term \
+            --cov-report=xml:coverage.xml \
+            --junitxml=pytest-results.xml
