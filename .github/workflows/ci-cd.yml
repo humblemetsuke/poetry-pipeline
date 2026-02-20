@@ -68,10 +68,10 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
           ./syft $IMAGE_NAME:ci -o json > sbom.json
 
-      - name: Upload test artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts
+          name: ci-artifacts-${{ matrix.python-version }}
           path: |
             coverage.xml
             pytest-results.xml
@@ -104,9 +104,3 @@ jobs:
         run: |
           docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest
           docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
-
-      - name: automatic version bump + tag
-        run: |
-          pip install commitizen
-          poetry run cz bump --yes
-          git push --follow-tags
