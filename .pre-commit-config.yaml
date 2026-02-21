@@ -149,7 +149,7 @@ repos:
 
       - id: compose-lint
         name: Lint docker-compose files with dclint
-        entry: dclint docker-compose.yml --disable-rule require-project-name-field
+        entry: dclint {files} --exclude require-project-name-field
         language: node
         types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
