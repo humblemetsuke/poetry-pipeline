@@ -75,8 +75,8 @@ jobs:
       # --------------------------
       # Install project dependencies
       # --------------------------
-      - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+      - name: Install dependencies (including dev)
+        run: poetry install --with dev --no-interaction --no-root
 
       # --------------------------
       # Run pre-commit hooks for formatting, linting, static analysis
