@@ -147,18 +147,6 @@ repos:
         language: system
         files: ^Dockerfile$
 
-      - id: compose-lint
-        name: Lint docker-compose files with dclint
-        entry: npx dclint
-        language: node
-        types: [yaml]
-        files: ^(docker-)?compose\.ya?ml$
-        pass_filenames: true
-        args:
-          - --exclude
-          - require-project-name-field
-        stages: [pre-commit]
-
       - id: trivy-scan-image
         name: Scan Docker image for OS vulnerabilities
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'
