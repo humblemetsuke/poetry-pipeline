@@ -149,11 +149,10 @@ repos:
 
       - id: compose-lint
         name: Lint docker-compose files with dclint
-        entry: dclint
+        entry: dclint docker-compose.yml --disable-rule require-project-name-field
         language: node
         types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
-        args: [docker-compose.yml, --exclude, require-project-name-field]
         stages: [pre-commit]
 
       - id: trivy-scan-image
