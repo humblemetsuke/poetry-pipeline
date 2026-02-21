@@ -3,34 +3,28 @@
 # =======================================
 
 # ===========================
-# Base Image: Minimal Python
-# ============================
+# Base Image: Python 3.12 slim
+# ===========================
 
-# Use a SHA digest to ensure immutability and prevent image tampering.
-# Also provides reproducibility, ensuring it avoids any "worked on my machine" issues.
-FROM python@sha256:0b23cfb7425d065008b778022a17b1551c82f8b4866ee5a7a200084b7e2eafbf
+# Use SHA digest to guarantee immutability and reproducibility.
+FROM python@sha256:4a8e0824201e50fc44ee8d208a2b3e44f33e00448907e524066fca5a96eb5567
 
 # ======================
 # Environment variables
 # ======================
 
-
-# Prevents bloating the image with additional files (.pyc files).
+# Prevent .pyc files from being created
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Flushes output instantly, eliminates delays, aids in debugging.
+# Flush output instantly
 ENV PYTHONUNBUFFERED=1
 
-# Assigns environment variable, signifying container is in production mode.
+# Container is in production mode
 ENV ENVIRONMENT=production
 
-# Eliminates additional poetry venv in container that causes bloat.
+# Poetry configs: no virtualenv, non-interactive, no ANSI colors
 ENV POETRY_VIRTUALENVS_CREATE=false
-
-# Eliminates need for user input, allowing for full automation.
 ENV POETRY_NO_INTERACTION=1
-
-# Disables coloured output from Poetry. Keeps CI/CD logs predictable.
 ENV POETRY_NO_ANSI=1
 
 # ---------------------------
@@ -41,72 +35,40 @@ WORKDIR /app
 # ---------------------------
 # Install Poetry
 # ---------------------------
-
-# --no-cache-dir ensures pip does not store temp files in /root/.cache.
-# Necessary to keep container clean and reduce bloat.
-# poetry==1.7.0 is pinned, ensuring maximum reproducibility.
-
 RUN pip install --no-cache-dir poetry==1.7.0
 
 # ---------------------------
 # Dependency caching
 # ---------------------------
-# Only pyproject.toml and poetry.lock are installed only if they change, speeding up installation.
-# poetry.lock is used to pin the version, again maximimising reproducibility.
-
 COPY pyproject.toml poetry.lock* ./
 
-
-
-# Disable virtualenv creation inside container, install only production deps
-# --no-interaction ensures full automation and --no-ansi keeps logs CI/CD friendly.
+# Install only production dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi
-
 
 # ---------------------------
 # Copy application code
 # ---------------------------
-# Only copy app/ folder to reduce attack surface and image size
 COPY app ./app
 
 # ---------------------------
 # Add non-root user (security)
 # ---------------------------
-
-
-# Stripping root access minimises harm by malicious user.
-# Place non-root user after poetry and dependencies installation removes potential permission issues.
-
 RUN useradd -m appuser
 USER appuser
 
 # ---------------------------
-# Expose necessary port
+# Expose port
 # ---------------------------
-
-# Advises other services (Kubernetes, Composer, other containers) how to interact with said container.
 EXPOSE 8000
 
-
 # ---------------------------
-# Healthcheck for container observability
+# Healthcheck
 # ---------------------------
-
-# HEALTHCHECK runs a healthcheck every 30 seconds to ensure the container is working.
-# If the container does not respond to a request from HEALTHCHECK, consider this a fail state.
-# --start-period=10s means that 10 seconds must elapse from the second the container starts up.
-# curl -f http://localhost:8000/health  calls the FastAPI health endpoint.
-# If error code 1 is returned, then consider container unhealthy.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD curl -f http://localhost:8000/health || exit 1
 
 # ======================
 # Run FastAPI app
 # ======================
-
-# CMD actually states the arguments for execution when the container starts.
-# Multiple workers was not included. Having one process per container keeps things clean.
-# One process per container also assists in observability metrics, and orchestration.
-
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
