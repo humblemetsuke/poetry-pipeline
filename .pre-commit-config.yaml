@@ -155,8 +155,7 @@ repos:
         files: ^(docker-)?compose\.ya?ml$
         pass_filenames: true
         args:
-          - --exclude
-          - require-project-name-field
+          - --exclude=require-project-name-field
         stages: [pre-commit]
 
       - id: trivy-scan-image
