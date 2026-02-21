@@ -1,5 +1,5 @@
 # ============================================================
-# Pre-commit configuration -
+# Pre-commit configuration
 # ============================================================
 
 repos:
@@ -10,15 +10,11 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        # Remove trailing whitespace to avoid unnecessary diffs
         exclude: ^(docs/_build/|node_modules)
       - id: end-of-file-fixer
-        # Ensure files end with a newline (POSIX compliance)
         exclude: ^(docs/_build/|node_modules)
       - id: check-yaml
-        # Validate YAML files to prevent syntax errors
       - id: check-added-large-files
-        # Warn if adding very large files to prevent bloated repo
         exclude: ^(node_modules|\.bandit-baseline\.json)
 
   # -------------------------
@@ -28,39 +24,34 @@ repos:
     rev: 26.1.0
     hooks:
       - id: black
-        # Auto-format Python code
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.10.1
     hooks:
       - id: isort
-        # Sort imports for readability/consistency
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        # Format JSON, YAML, Markdown, JS, TS files
         files: \.(json|yml|yaml|md|js|ts)$
         exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
 
   # -------------------------
-  # Lightweight linting & typing (fast, pre-commit)
+  # Lightweight linting & typing
   # -------------------------
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
     hooks:
       - id: flake8
-        # Basic Python linting (PEP8, style)
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1
     hooks:
       - id: mypy
-        # Type checking for Python
         exclude: '^\.venv/'
 
   # -------------------------
@@ -72,7 +63,6 @@ repos:
         name: Lint commit messages
         entry: bash -c 'npx commitlint --edit "$1"' --
         language: system
-        # Only runs on commit messages
         stages: [commit-msg]
 
   # -------------------------
@@ -85,9 +75,7 @@ repos:
         additional_dependencies:
           - setuptools>=68
           - wheel
-        # Analyze Python code quality
         files: ^(\.|src)/
-        # Run only before push to avoid slowing local commits
         stages: [pre-push]
 
   - repo: local
@@ -104,7 +92,6 @@ repos:
           - --exclude
           - "venv,.venv,build,dist,.mypy_cache,.pytest_cache"
         pass_filenames: false
-        # Complexity checks only before push
         stages: [pre-push]
 
       - id: vulture
@@ -118,44 +105,29 @@ repos:
           - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
           - --ignore-names
           - read_root,create_item,update_item,delete_item
-        # Run only before push to reduce local lag
         stages: [pre-push]
 
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.3
-    hooks:
       - id: bandit
-        args:
-          - "-r"
-          - "."
-          - "-x"
-          - ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests"
-          - "--baseline"
-          - ".bandit-baseline.json" # tells Bandit: ignore previously reported issues.
+        name: Security scan with Bandit
+        entry: bandit -r . -x ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests" --baseline .bandit-baseline.json
+        language: system
         pass_filenames: false
-        # Security scan for Python code, pre-push only
         stages: [pre-push]
 
-  - repo: local
-    hooks:
       - id: pytest-coverage
         name: Run pytest with coverage
         entry: poetry run pytest --cov=app --cov-fail-under=80
         language: system
         pass_filenames: false
-        # Heavy test + coverage check, pre-push only
         stages: [pre-push]
 
-  # -------------------------
-  # Environment & documentation (fast enough for pre-commit)
-  # -------------------------
-  - repo: local
-    hooks:
+      # -------------------------
+      # Environment & documentation
+      # -------------------------
       - id: block-env-files
         name: Block .env files
         language: python
         entry: hooks/block_env.py
-        # Prevent committing sensitive environment files
         files: (^|/)\.env(\.[a-zA-Z0-9_-]+|$)
 
       - id: build-sphinx
@@ -166,25 +138,22 @@ repos:
         files: \.(rst|md)$
         exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
 
-  # -------------------------
-  # Docker & container checks
-  # -------------------------
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0
-    hooks:
+      # -------------------------
+      # Docker & container checks
+      # -------------------------
       - id: hadolint
-        # Lint Dockerfile for common mistakes
+        name: Lint Dockerfile with Hadolint
+        entry: hadolint Dockerfile
+        language: system
         files: ^Dockerfile$
 
-  # Local pre-commit hook for Docker Compose linting
-  - repo: local
-    hooks:
       - id: compose-lint
         name: Lint docker-compose files with dclint
-        entry: npx dclint docker-compose.yml --fix
+        entry: dclint
         language: node
         types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
+        args: [docker-compose.yml, --exclude, require-project-name-field]
         stages: [pre-commit]
 
       - id: trivy-scan-image
@@ -192,7 +161,6 @@ repos:
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'
         language: system
         pass_filenames: false
-        # Heavy Docker scan, pre-push
         stages: [pre-push]
 
       - id: trivy-scan-deps
@@ -207,5 +175,4 @@ repos:
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && cosign sign --key cosign.key $IMAGE_TAG'
         language: system
         pass_filenames: false
-        # Cryptographic signing, pre-push
         stages: [pre-push]
