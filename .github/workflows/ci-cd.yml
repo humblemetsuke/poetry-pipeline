@@ -100,7 +100,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           poetry run pytest \
-            --cov=app \
+            --cov=poetry-pipeline \
             --cov-report=term \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=80 \
