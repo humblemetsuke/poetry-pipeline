@@ -155,6 +155,7 @@ repos:
         files: ^(docker-)?compose\.ya?ml$
         pass_filenames: true
         args:
+          - "{files}"
           - --exclude
           - require-project-name-field
         stages: [pre-commit]
