@@ -2,18 +2,15 @@
 # docker-compose.yml
 # ========================================================
 
-version: "3.9"
-
+name: Docker-compose-for-poetry-pipeline.yml
 services:
   api:
     build: . # Build container from local Dockerfile
     container_name: fastapi_app # Friendly container name
-    ports:
-      - "8000:8000" # Expose FastAPI port only
     environment:
       - ENVIRONMENT=production # Matches Dockerfile production setting
-    read_only: true # Read-only filesystem for security
-    tmpfs: /tmp # Writable temp space for runtime needs
+    ports:
+      - "127.0.0.1:8000:8000" # Expose FastAPI port only
     networks:
       - internal # Internal network for isolation
     restart: unless-stopped # Keep container alive if it crashes
@@ -24,23 +21,6 @@ services:
       retries: 3
 
     # ---------------------------
-    # Resource limits / fault control
-    # ---------------------------
-    deploy:
-      resources:
-        limits: # Hard caps to prevent runaway usage
-          cpus: "0.5"
-          memory: 256M
-        reservations: # Minimum guaranteed resources
-          cpus: "0.25"
-          memory: 128M
-    ulimits: # Restrict processes and open files
-      nproc: 100
-      nofile:
-        soft: 1024
-        hard: 2048
-
-    # ---------------------------
     # Logging (observability)
     # ---------------------------
     logging:
@@ -48,6 +28,28 @@ services:
       options:
         max-size: "10m" # Rotate logs at 10MB
         max-file: "3" # Keep last 3 rotated logs
+
+    # ---------------------------
+    # Resource limits / fault control
+    # ---------------------------
+    deploy:
+      resources:
+        limits:
+          # Hard caps to prevent runaway usage
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          # Minimum guaranteed resources
+          cpus: "0.25"
+          memory: 128M
+    read_only: true # Read-only filesystem for security
+    tmpfs: /tmp # Writable temp space for runtime needs
+    ulimits:
+      # Restrict processes and open files
+      nproc: 100
+      nofile:
+        soft: 1024
+        hard: 2048
 
 # ========================================================
 # Internal network definition
