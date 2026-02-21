@@ -149,7 +149,7 @@ repos:
 
       - id: compose-lint
         name: Lint docker-compose files with dclint
-        entry: dclint
+        entry: npx dclint
         language: node
         types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
