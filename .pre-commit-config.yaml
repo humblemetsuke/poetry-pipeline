@@ -176,14 +176,15 @@ repos:
         # Lint Dockerfile for common mistakes
         files: ^Dockerfile$
 
+  # Local pre-commit hook for Docker Compose linting
   - repo: local
     hooks:
       - id: compose-lint
-        name: Lint docker-compose files
-        entry: dclint
-        language: system
+        name: Lint docker-compose files with dclint
+        entry: npx dclint lint docker-compose.yml
+        language: node
+        types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
-        # Lightweight lint, pre-commit
         stages: [pre-commit]
 
       - id: trivy-scan-image
