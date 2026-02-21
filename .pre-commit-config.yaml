@@ -181,7 +181,7 @@ repos:
     hooks:
       - id: compose-lint
         name: Lint docker-compose files with dclint
-        entry: npx dclint lint docker-compose.yml
+        entry: npx dclint docker-compose.yml --fix
         language: node
         types: [yaml]
         files: ^(docker-)?compose\.ya?ml$
