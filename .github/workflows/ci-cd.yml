@@ -99,8 +99,9 @@ jobs:
       # --------------------------
       - name: Run tests with coverage
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           poetry run pytest \
-            --cov=poetry_pipeline \
+            --cov=app \
             --cov-report=term \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=80 \
