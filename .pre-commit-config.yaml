@@ -1,5 +1,5 @@
 # ============================================================
-# Pre-commit configuration - Max ROI, commented & optimized
+# Pre-commit configuration -
 # ============================================================
 
 repos:
@@ -79,7 +79,7 @@ repos:
   # Heavy static analysis & security (pre-push)
   # -------------------------
   - repo: https://github.com/PyCQA/pylint
-    rev: v4.0.4
+    rev: v4.0.5
     hooks:
       - id: pylint
         additional_dependencies:
@@ -170,7 +170,7 @@ repos:
   # Docker & container checks
   # -------------------------
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.0
+    rev: v2.14.0
     hooks:
       - id: hadolint
         # Lint Dockerfile for common mistakes
@@ -180,7 +180,7 @@ repos:
     hooks:
       - id: compose-lint
         name: Lint docker-compose files
-        entry: docker-compose-linter check docker-compose.yml
+        entry: dclint
         language: system
         files: ^(docker-)?compose\.ya?ml$
         # Lightweight lint, pre-commit
