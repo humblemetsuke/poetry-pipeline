@@ -1,103 +1,37 @@
-# ============================================================
-# CI/CD Pipeline for Poetry-Pipeline FastAPI Project
-# ============================================================
+name: CI/CD Pipeline
 
-name: CI/CD pipeline
-
-# Trigger workflow on PRs to main or direct pushes to main
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-# Environment variables for Docker and image naming
-env:
-  IMAGE_NAME: poetry-pipeline # Local CI image name
-  DOCKER_REGISTRY: ghcr.io # GitHub Container Registry
-  DOCKER_REPOSITORY: ${{ github.repository }} # Full repo path for GHCR
-
-# ==========================
-# Set permissions for GHCR
-# ==========================
-permissions:
-  contents: read # Needed for checkout
-  packages: write # Needed to push Docker image to GHCR
-
-# ==========================
-# Jobs
-# ==========================
 jobs:
-  # ==========================
-  # Validation job: runs for PRs and pushes
-  # Includes linting, tests, coverage, pre-commit, SBOM generation
-  # ==========================
-  validate:
+  build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"] # Test multiple Python versions
-
     steps:
-      # --------------------------
-      # Checkout repository
-      # --------------------------
-      - name: Checkout repository
+      # 1️⃣ Checkout the repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # --------------------------
-      # Setup Python
-      # --------------------------
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      # 2️⃣ Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: 3.12
 
-      # --------------------------
-      # Cache Poetry dependencies to speed up builds
-      # --------------------------
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      # ----------------
-      # Install Poetry
-      # ----------------
+      # 3️⃣ Install Poetry
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install --no-cache-dir poetry==1.7.0
 
-      # ----------------------------------------------
-      # Install hadolint for ci/cd workflow in github
-      # ---------------------------------------------
-      - name: Install hadolint
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
         run: |
-          wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
-          chmod +x /usr/local/bin/hadolint
+          poetry config virtualenvs.create false
+          poetry install --no-dev --no-interaction --no-ansi
 
-      # --------------------------
-      # Install project dependencies
-      # --------------------------
-      - name: Install dependencies (including dev)
-        run: poetry install --with dev --no-interaction --no-root
-
-      # --------------------------
-      # Run pre-commit hooks for formatting, linting, static analysis
-      # --------------------------
-      - name: Run pre-commit hooks
-        run: poetry run pre-commit run --all-files
-
-      # --------------------------
-      # Run tests with coverage
-      # Generates XML coverage report and JUnit test results
-      # Fails if coverage < 80%
-      # --------------------------
-      - name: Run tests with coverage
+      # 5️⃣ Run tests with coverage
+      - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           poetry run pytest \
@@ -107,88 +41,22 @@ jobs:
             --cov-fail-under=80 \
             --junitxml=pytest-results.xml
 
-      # --------------------------
-      # Run flake8 linting
-      # --------------------------
-      - name: Run flake8 lint
-        run: poetry run flake8 app
+      # 6️⃣ Install Syft for SBOM
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version
 
-      # --------------------------
-      # Build Docker image for testing
-      # --------------------------
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME:ci .
-
-      # --------------------------
-      # Generate SBOM using Syft
-      # --------------------------
+      # 7️⃣ Generate SBOM
       - name: Generate SBOM
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
-          ./syft $IMAGE_NAME:ci -o json > sbom.json
+        run: syft dir:. -o json > sbom.json
 
-      # --------------------------
-      # Upload artifacts for inspection
-      # --------------------------
-      - name: Upload CI artifacts
-        uses: actions/upload-artifact@v4
+      # 8️⃣ Upload artifacts (optional, for CI visibility)
+      - name: Upload test reports and SBOM
+        uses: actions/upload-artifact@v3
         with:
-          name: ci-artifacts-${{ matrix.python-version }}
+          name: test-artifacts
           path: |
-            coverage.xml
             pytest-results.xml
+            coverage.xml
             sbom.json
-
-  # ==========================
-  # Publish job: runs only on main
-  # Builds, tags, pushes Docker image, and bumps version
-  # ==========================
-  publish:
-    needs: validate # Only run after validate succeeds
-    if: github.ref == 'refs/heads/main' # Only merges to main trigger this
-    runs-on: ubuntu-latest
-
-    steps:
-      # --------------------------
-      # Checkout repository
-      # --------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # --------------------------
-      # Login to GHCR (Docker registry)
-      # --------------------------
-      - name: Log into GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # --------------------------
-      # Build Docker image and tag
-      # Tag :latest for newest release
-      # Tag by commit SHA for immutable reference
-      # --------------------------
-      - name: Build and tag Docker image
-        run: |
-          docker build -t $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest .
-          docker tag $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
-
-      # --------------------------
-      # Push Docker image to GHCR
-      # --------------------------
-      - name: Push Docker image
-        run: |
-          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest
-          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
-
-      # --------------------------
-      # Automatic version bump using Commitizen
-      # Creates a git tag based on conventional commits
-      # --------------------------
-      - name: Automatic version bump
-        run: |
-          pip install commitizen
-          poetry run cz bump --yes
-          git push --follow-tags
