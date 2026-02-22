@@ -28,18 +28,5 @@ This project demonstrates modern Python DevOps practices, from containerization 
 - GitHub Actions (CI/CD)
 - Pre-commit hooks (code quality & formatting)
 
----
+<img width="764" height="261" alt="Screenshot 2026-02-22 040608" src="https://github.com/user-attachments/assets/29c9bca6-ffa7-478e-9fdf-6808785f95f5" />
 
-## Features
-
-+| Feature                 | Description                                                |
-+| ----------------------- | ---------------------------------------------------------- |
-+| Dockerized App          | Runs FastAPI in a secure container, using a non-root user. |
-+| CI/CD Pipeline          | Automated linting, testing, and code coverage checks.      |
-+| Dependency Caching      | Speeds up builds with Poetry caching.                      |
-+| Healthchecks            | Monitors container health to ensure uptime.                |
-+| Resource Limits         | CPU/memory caps to prevent runaway processes.              |
-+| Logging & Observability | Rotating logs and structured logging for easier debugging. |
----
-
-## Project Structure
