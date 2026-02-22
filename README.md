@@ -1,6 +1,5 @@
 # Poetry-Pipeline
 
-![CI](https://github.com/humblemetsuke/poetry-pipeline/actions/workflows/ci-cd.yml/badge.svg)
 
 Secure FastAPI with Docker & CI/CD
 
