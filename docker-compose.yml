@@ -10,7 +10,7 @@ services:
     environment:
       ENVIRONMENT: production # Matches Dockerfile production setting
     ports:
-      - "127.0.0.1:8000:8000" # Expose FastAPI port only
+      - "${PORT:-8000}:8000"
     networks:
       - internal # Internal network for isolation
     restart: unless-stopped # Keep container alive if it crashes
