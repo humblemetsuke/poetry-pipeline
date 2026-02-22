@@ -87,11 +87,16 @@ jobs:
       - name: Build Docker image
         run: docker build -t $IMAGE_NAME:ci .
 
+      # --------------------------
       # Generate SBOM using Syft
+      # --------------------------
       - name: Generate SBOM
         run: |
+          # Install Syft
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+          # Add Syft to PATH so we can call it
           export PATH="$PWD/bin:$PATH"
+          # Generate SBOM for the Docker image
           syft $IMAGE_NAME:ci -o json > sbom.json
 
       # Upload artifacts
