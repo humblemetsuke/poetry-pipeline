@@ -1,7 +1,5 @@
 # Poetry-Pipeline
 
-Secure FastAPI with Docker & CI/CD
-<!-- Version -->
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 
 ---
