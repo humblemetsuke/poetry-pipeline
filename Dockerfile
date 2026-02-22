@@ -43,10 +43,13 @@ RUN poetry config virtualenvs.create false \
 COPY app ./app
 
 # ---------------------------
-# Add non-root user
+# Add non-root user and logs folder
 # ---------------------------
-RUN useradd -m appuser
-RUN mkdir -p /tmp && chown appuser:appuser /tmp
+RUN useradd -m appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app/logs
+
+# Switch to non-root user
 USER appuser
 
 # ---------------------------
