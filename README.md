@@ -32,15 +32,14 @@ This project demonstrates modern Python DevOps practices, from containerization 
 
 ## Features
 
-| Feature               | Description                                                       |
-|-----------------------|-------------------------------------------------------------------|
-| Dockerized App         | Runs FastAPI in a secure container, using a non-root user.        |
-| CI/CD Pipeline         | Automated linting, testing, and code coverage checks.            |
-| Dependency Caching     | Speeds up builds with Poetry caching.                             |
-| Healthchecks           | Monitors container health to ensure uptime.                      |
-| Resource Limits        | CPU/memory caps to prevent runaway processes.                     |
-| Logging & Observability| Rotating logs and structured logging for easier debugging.        |
-
++| Feature                 | Description                                                |
++| ----------------------- | ---------------------------------------------------------- |
++| Dockerized App          | Runs FastAPI in a secure container, using a non-root user. |
++| CI/CD Pipeline          | Automated linting, testing, and code coverage checks.      |
++| Dependency Caching      | Speeds up builds with Poetry caching.                      |
++| Healthchecks            | Monitors container health to ensure uptime.                |
++| Resource Limits         | CPU/memory caps to prevent runaway processes.              |
++| Logging & Observability | Rotating logs and structured logging for easier debugging. |
 ---
 
 ## Project Structure
