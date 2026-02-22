@@ -36,7 +36,7 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           export PATH="$HOME/.local/bin:$PATH"
           poetry config virtualenvs.create false
-          poetry install --without-dev --no-interaction --no-ansi
+          poetry install --without dev --no-interaction --no-ansi
 
       # -------------------------
       # 4️⃣ Run tests with coverage
