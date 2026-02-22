@@ -51,21 +51,67 @@ poetry-pipeline/
 ├─ poetry.lock            # Locked dependencies
 ├─ .github/workflows/ci-cd.yml  # CI/CD pipeline
 └─ README.md              # Project documentation
+
+
 ⚙️ Getting Started
+
 1. Clone the repository
 git clone https://github.com/humblemetsuke/poetry-pipeline.git
 cd poetry-pipeline
+
 2. Build Docker container
 docker build -t poetry-pipeline .
+
 3. Run the container
 docker run -p 8000:8000 poetry-pipeline
 
 Check the health endpoint:
 
 curl http://localhost:8000/health
+
 4. Using Docker Compose (dev)
 docker-compose up --build
+
+
 CI/CD Pipeline
+
+The GitHub Actions workflow automatically:
+
+Installs dependencies via Poetry
+
+Runs linting & pre-commit checks
+
+Executes tests and checks coverage
+
+Builds Docker images with caching
+
+Performs healthchecks on the container
+
+Branch & Git Workflow
+
+Feature Branches: Used for new functionality (e.g., feat/docker-compose)
+
+Merge to Main: Only after CI/CD passes and code review
+
+Main Branch: Always production-ready
+
+🎯 Key Learnings
+
+Building secure Docker images for Python apps
+
+Automating CI/CD pipelines for fast, reliable deployments
+
+Managing dependencies reproducibly with Poetry
+
+Observability & fault tolerance in containerized environments
+
+📌 Next Steps
+
+Deploy the container to a cloud service (Render, Railway, AWS ECS)
+
+Add more FastAPI endpoints with tests
+
+Integrate automated vulnerability scanning (Snyk, Trivy)
 
 The GitHub Actions workflow automatically:
 
