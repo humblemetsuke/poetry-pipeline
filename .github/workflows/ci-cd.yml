@@ -1,54 +1,40 @@
-# ============================================================
-# CI/CD Pipeline for Poetry-Pipeline FastAPI Project
-# ============================================================
-
 name: CI/CD pipeline
 
-# Trigger workflow on PRs to main or direct pushes to main
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
-# Environment variables for Docker and image naming
 env:
-  IMAGE_NAME: poetry-pipeline # Local CI image name
-  DOCKER_REGISTRY: ghcr.io # GitHub Container Registry
-  DOCKER_REPOSITORY: ${{ github.repository }} # Full repo path for GHCR
+  IMAGE_NAME: poetry-pipeline
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_REPOSITORY: ${{ github.repository }}
 
-# ==========================
-# Set permissions for GHCR
-# ==========================
 permissions:
-  contents: read # Needed for checkout
-  packages: write # Needed to push Docker image to GHCR
+  contents: read
+  packages: write
 
-# ==========================
-# Jobs
-# ==========================
 jobs:
   # ==========================
-  # Validation job: linting, tests, SBOM
+  # Validation: linting, tests, SBOM
   # ==========================
   validate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
+
     steps:
-      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
-      # Cache Poetry dependencies
-      - name: Cache Poetry dependencies
+      - name: Cache Poetry
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
@@ -56,19 +42,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
 
-      # Install Poetry
       - name: Install Poetry
         run: pip install poetry
 
-      # Install project dependencies (including dev)
       - name: Install dependencies
         run: poetry install --with dev --no-interaction
 
-      # Run pre-commit hooks
       - name: Run pre-commit hooks
         run: poetry run pre-commit run --all-files
 
-      # Run tests with coverage
       - name: Run tests with coverage
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -79,27 +61,18 @@ jobs:
             --cov-fail-under=80 \
             --junitxml=pytest-results.xml
 
-      # Run flake8 linting
       - name: Run flake8 lint
         run: poetry run flake8 app
 
-      # Build Docker image for testing
-      - name: Build Docker image
+      - name: Build Docker image for CI
         run: docker build -t $IMAGE_NAME:ci .
 
-      # --------------------------
-      # Generate SBOM using Syft
-      # --------------------------
-      - name: Generate SBOM
+      - name: Generate SBOM with Syft
         run: |
-          # Install Syft
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
-          # Add Syft to PATH so we can call it
           export PATH="$PWD/bin:$PATH"
-          # Generate SBOM for the Docker image
           syft $IMAGE_NAME:ci -o json > sbom.json
 
-      # Upload artifacts
       - name: Upload CI artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -110,7 +83,7 @@ jobs:
             sbom.json
 
   # ==========================
-  # Docker Compose test job
+  # Docker Compose test
   # ==========================
   docker-compose-test:
     runs-on: ubuntu-latest
@@ -122,18 +95,37 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build Docker Compose services
         run: docker compose -f docker-compose.yml build
 
-      - name: Start container for testing
+      - name: Start container for testing and wait for health
         run: |
+          # Start services detached
           docker compose -f docker-compose.yml up -d
-          sleep 10
+
+          # Get container ID dynamically
+          CONTAINER=$(docker compose ps -q fastapi_app)
+
+          # Wait until container is healthy
+          echo "Waiting for FastAPI container to be healthy..."
+          for i in {1..30}; do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER)
+            if [ "$STATUS" = "healthy" ]; then
+              echo "FastAPI is healthy!"
+              break
+            fi
+            echo "Current status: $STATUS. Waiting 2s..."
+            sleep 2
+          done
+
+          # Final health check via curl
           curl -f http://localhost:8000/health
+
+          # Tear down
           docker compose -f docker-compose.yml down
 
   # ==========================
-  # Publish job: runs only on main
+  #  Publish Docker image to GHCR (main branch only)
   # ==========================
   publish:
     needs: docker-compose-test
@@ -143,14 +135,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log into GitHub Container Registry
+      - name: Log into GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and tag Docker image
+      - name: Build & tag Docker image
         run: |
           docker build -t $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest .
           docker tag $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
@@ -164,4 +156,4 @@ jobs:
         run: |
           pip install commitizen
           poetry run cz bump --yes
-          git push --follow-tagsg
+          git push --follow-tags
