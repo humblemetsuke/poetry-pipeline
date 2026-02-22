@@ -9,31 +9,40 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+
     steps:
-      # 1️⃣ Checkout the repo
-      - name: Checkout code
+      # -------------------------
+      # 1️⃣ Checkout code
+      # -------------------------
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # -------------------------
       # 2️⃣ Set up Python
-      - name: Set up Python
+      # -------------------------
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: "3.12"
 
+      # -------------------------
       # 3️⃣ Install Poetry
+      # -------------------------
       - name: Install Poetry
-        run: pip install --no-cache-dir poetry==1.7.0
-
-      # 4️⃣ Install dependencies
-      - name: Install dependencies
         run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
           poetry config virtualenvs.create false
           poetry install --no-dev --no-interaction --no-ansi
 
-      # 5️⃣ Run tests with coverage
+      # -------------------------
+      # 4️⃣ Run tests with coverage
+      # -------------------------
       - name: Run tests
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
           poetry run pytest \
             --cov=app \
             --cov-report=term \
@@ -41,22 +50,35 @@ jobs:
             --cov-fail-under=80 \
             --junitxml=pytest-results.xml
 
-      # 6️⃣ Install Syft for SBOM
-      - name: Install Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-          syft version
-
-      # 7️⃣ Generate SBOM
-      - name: Generate SBOM
-        run: syft dir:. -o json > sbom.json
-
-      # 8️⃣ Upload artifacts (optional, for CI visibility)
-      - name: Upload test reports and SBOM
+      # -------------------------
+      # 5️⃣ Upload test results
+      # -------------------------
+      - name: Upload JUnit XML
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts
-          path: |
-            pytest-results.xml
-            coverage.xml
-            sbom.json
+          name: pytest-results
+          path: pytest-results.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      # -------------------------
+      # 6️⃣ Generate SBOM with Syft
+      # -------------------------
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+          export PATH="$HOME/.syft/bin:$PATH"
+
+      - name: Generate SBOM
+        run: |
+          syft dir:. -o cyclonedx-json=sbom.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
