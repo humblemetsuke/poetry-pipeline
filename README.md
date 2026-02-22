@@ -15,7 +15,6 @@ Poetry-Pipeline is a secure, production-ready FastAPI application packaged with 
 - Branch-based development workflow  
 
 This project demonstrates modern Python DevOps practices, from containerization to automated testing and deployment.
-
 ---
 
 ## Tech Stack
