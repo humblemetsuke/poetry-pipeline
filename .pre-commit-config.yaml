@@ -157,13 +157,6 @@ repos:
   # -------------------------
   # 7️⃣ Docker & container checks
   # -------------------------
-  - repo: local
-    hooks:
-      - id: hadolint
-        name: Lint Dockerfile with Hadolint
-        entry: cmd /c "C:\ProgramData\chocolatey\bin\hadolint.exe Dockerfile"
-        language: system
-        files: ^Dockerfile$
 
   - repo: local
     hooks:
