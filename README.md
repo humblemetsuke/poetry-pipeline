@@ -3,7 +3,6 @@
 
 Secure FastAPI with Docker & CI/CD
 
----
 
 ## Project Overview
 
