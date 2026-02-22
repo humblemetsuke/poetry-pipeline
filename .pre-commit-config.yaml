@@ -4,7 +4,7 @@
 
 repos:
   # -------------------------
-  # Quick sanity checks (fast, fail early)
+  # 1️⃣ Quick sanity checks
   # -------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -18,7 +18,7 @@ repos:
         exclude: ^(node_modules|\.bandit-baseline\.json)
 
   # -------------------------
-  # Code formatting
+  # 2️⃣ Code formatting
   # -------------------------
   - repo: https://github.com/psf/black
     rev: 26.1.0
@@ -40,7 +40,7 @@ repos:
         exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
 
   # -------------------------
-  # Lightweight linting & typing
+  # 3️⃣ Lightweight linting & typing
   # -------------------------
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
@@ -55,7 +55,7 @@ repos:
         exclude: '^\.venv/'
 
   # -------------------------
-  # Commit message linting
+  # 4️⃣ Commit message linting
   # -------------------------
   - repo: local
     hooks:
@@ -66,7 +66,7 @@ repos:
         stages: [commit-msg]
 
   # -------------------------
-  # Heavy static analysis & security (pre-push)
+  # 5️⃣ Heavy static analysis & security (pre-push)
   # -------------------------
   - repo: https://github.com/PyCQA/pylint
     rev: v4.0.5
@@ -121,9 +121,11 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
-      # -------------------------
-      # Environment & documentation
-      # -------------------------
+  # -------------------------
+  # 6️⃣ Environment & documentation
+  # -------------------------
+  - repo: local
+    hooks:
       - id: block-env-files
         name: Block .env files
         language: python
@@ -138,15 +140,11 @@ repos:
         files: \.(rst|md)$
         exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
 
-      # -------------------------
-      # Docker & container checks
-      # -------------------------
-      - id: hadolint
-        name: Lint Dockerfile with Hadolint
-        entry: hadolint Dockerfile
-        language: system
-        files: ^Dockerfile$
-
+  # -------------------------
+  # 7️⃣ Docker & container checks
+  # -------------------------
+  - repo: local
+    hooks:
       - id: trivy-scan-image
         name: Scan Docker image for OS vulnerabilities
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'

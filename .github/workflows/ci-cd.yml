@@ -1,46 +1,91 @@
-name: CI/CD Pipeline
+name: CI/CD pipeline
 
+# ----------------------------------------
+# Trigger on PRs to main or direct pushes
+# ----------------------------------------
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+# ----------------------------------------
+# Environment variables for Docker & image
+# ----------------------------------------
+env:
+  IMAGE_NAME: poetry-pipeline # Local CI image name
+  DOCKER_REGISTRY: ghcr.io # GitHub Container Registry
+  DOCKER_REPOSITORY: ${{ github.repository }} # Full repo path for GHCR
+  SERVICE_NAME: api # Docker Compose service name (matches docker-compose.yml)
+
+# ----------------------------------------
+# Permissions
+# ----------------------------------------
+permissions:
+  contents: read # Required for actions/checkout
+  packages: write # Required to push Docker images to GHCR
+
+# ========================================
+# Jobs
+# ========================================
+
 jobs:
-  build-and-test:
+  # -----------------------------
+  # Validation: linting, tests, SBOM
+  # -----------------------------
+  validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"] # Test on Python 3.12
 
     steps:
-      # -------------------------------
-      # 1️⃣ Checkout the repo
-      # -------------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # -----------------------------
+      # Checkout repo
+      # -----------------------------
+      - uses: actions/checkout@v4
 
-      # -------------------------------
-      # 2️⃣ Set up Python
-      # -------------------------------
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      # -----------------------------
+      # Setup Python
+      # -----------------------------
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
-      # -------------------------------
-      # 3️⃣ Install Poetry 2.x
-      # -------------------------------
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry config virtualenvs.create false
-          poetry config virtualenvs.in-project false
-          poetry install --no-interaction --no-ansi   # install all dependencies including dev
+      # -----------------------------
+      # Cache Poetry dependencies
+      # -----------------------------
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
 
-      # -------------------------------
-      # 4️⃣ Run Tests with Coverage
-      # -------------------------------
-      - name: Run tests with coverage
+      # -----------------------------
+      # Install Poetry
+      # -----------------------------
+      - run: pip install poetry
+
+      # -----------------------------
+      # Install all project dependencies (including dev)
+      # -----------------------------
+      - run: poetry install --with dev --no-interaction
+
+      # -----------------------------
+      # Idempotent pre-commit check
+      # -----------------------------
+      - name: Run pre-commit hooks (idempotent)
         run: |
+          # Run pre-commit on all files
+          # --show-diff-on-failure shows changes needed
+          # --color=always makes output readable
+          poetry run pre-commit run --all-files --show-diff-on-failure --color=always
+
+      # -----------------------------
+      # Run tests with coverage
+      # -----------------------------
+      - run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           poetry run pytest \
             --cov=app \
@@ -49,13 +94,151 @@ jobs:
             --cov-fail-under=80 \
             --junitxml=pytest-results.xml
 
-      # -------------------------------
-      # 5️⃣ Upload Test Artifacts
-      # -------------------------------
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
+      # -----------------------------
+      # Lint code with flake8
+      # -----------------------------
+      - run: poetry run flake8 app
+
+      # -----------------------------
+      # Build Docker image for SBOM & later testing
+      # -----------------------------
+      - run: docker build -t $IMAGE_NAME:ci .
+
+      # -----------------------------
+      # Generate SBOM using Syft
+      # -----------------------------
+      - run: |
+          # Install Syft (Anchore)
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+          # Add Syft to PATH
+          export PATH="$PWD/bin:$PATH"
+          # Generate SBOM for Docker image
+          syft $IMAGE_NAME:ci -o json > sbom.json
+
+      # -----------------------------
+      # Upload artifacts for reference
+      # -----------------------------
+      - uses: actions/upload-artifact@v4
         with:
-          name: pytest-results
+          name: ci-artifacts-${{ matrix.python-version }}
           path: |
-            pytest-results.xml
             coverage.xml
+            pytest-results.xml
+            sbom.json
+
+  # -----------------------------
+  # Docker Compose test (dynamic port)
+  # -----------------------------
+  docker-compose-test:
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      SERVICE_NAME: api # Match docker-compose.yml service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -----------------------------
+      # Setup Docker Buildx (needed for builds)
+      # -----------------------------
+      - uses: docker/setup-buildx-action@v3
+
+      # -----------------------------
+      # Allocate a random host port
+      # -----------------------------
+      - name: Allocate random host port
+        id: port
+        run: |
+          PORT=$(shuf -i 20000-30000 -n 1)
+          echo "PORT=$PORT" >> $GITHUB_ENV
+          echo "Using random host port: $PORT"
+
+      # -----------------------------
+      # Build Docker image
+      # -----------------------------
+      - name: Build Docker image
+        run: docker compose -f docker-compose.yml build
+
+      # -----------------------------
+      # Start container and wait for health
+      # -----------------------------
+      - name: Start container and wait for health
+        run: |
+          echo "Starting container on dynamic port $PORT"
+
+          # Export PORT to docker-compose
+          PORT=$PORT docker compose -f docker-compose.yml up -d
+
+          # Get container ID for healthcheck
+          CONTAINER=$(docker compose -f docker-compose.yml ps -q $SERVICE_NAME)
+
+          # Wait for container to become healthy
+          echo "Waiting for container '$SERVICE_NAME' to become healthy..."
+          for i in {1..60}; do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER)
+            if [ "$STATUS" = "healthy" ]; then
+              echo "✅ FastAPI container is healthy!"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "❌ Container did not become healthy in time."
+              echo "=== Logs ==="
+              docker logs $CONTAINER
+              docker compose -f docker-compose.yml down
+              exit 1
+            fi
+            echo "Current status: $STATUS. Waiting 2s..."
+            sleep 2
+          done
+
+          # -----------------------------
+          # Final external check
+          # -----------------------------
+          curl -f http://localhost:$PORT/health
+
+          # -----------------------------
+          # Cleanup
+          # -----------------------------
+          docker compose -f docker-compose.yml down
+
+  # -----------------------------
+  # Publish Docker image to GHCR
+  # -----------------------------
+  publish:
+    needs: docker-compose-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -----------------------------
+      # Login to GHCR
+      # -----------------------------
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # -----------------------------
+      # Build and tag Docker image
+      # -----------------------------
+      - run: |
+          docker build -t $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest .
+          docker tag $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
+
+      # -----------------------------
+      # Push Docker image
+      # -----------------------------
+      - run: |
+          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:latest
+          docker push $DOCKER_REGISTRY/$DOCKER_REPOSITORY:${{ github.sha }}
+
+      # -----------------------------
+      # Automatic version bump using Commitizen
+      # -----------------------------
+      - run: |
+          pip install commitizen
+          poetry run cz bump --yes
+          git push --follow-tags

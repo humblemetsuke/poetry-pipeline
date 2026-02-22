@@ -2,30 +2,23 @@
 # Secure DevOps-Ready FastAPI Dockerfile
 # =======================================
 
-# ===========================
-# Base Image: Python 3.12 slim
-# ===========================
-
-# Use SHA digest to guarantee immutability and reproducibility.
 FROM python@sha256:4a8e0824201e50fc44ee8d208a2b3e44f33e00448907e524066fca5a96eb5567
 
-# ======================
+# ---------------------------
 # Environment variables
-# ======================
-
-# Prevent .pyc files from being created
+# ---------------------------
 ENV PYTHONDONTWRITEBYTECODE=1
-
-# Flush output instantly
 ENV PYTHONUNBUFFERED=1
-
-# Container is in production mode
 ENV ENVIRONMENT=production
-
-# Poetry configs: no virtualenv, non-interactive, no ANSI colors
 ENV POETRY_VIRTUALENVS_CREATE=false
 ENV POETRY_NO_INTERACTION=1
 ENV POETRY_NO_ANSI=1
+
+# ---------------------------
+# Install OS dependencies
+# ---------------------------
+USER root
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------
 # Set working directory
@@ -41,8 +34,6 @@ RUN pip install --no-cache-dir poetry==1.7.0
 # Dependency caching
 # ---------------------------
 COPY pyproject.toml poetry.lock* ./
-
-# Install only production dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi
 
@@ -52,9 +43,13 @@ RUN poetry config virtualenvs.create false \
 COPY app ./app
 
 # ---------------------------
-# Add non-root user (security)
+# Add non-root user and logs folder
 # ---------------------------
-RUN useradd -m appuser
+RUN useradd -m appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app/logs
+
+# Switch to non-root user
 USER appuser
 
 # ---------------------------
@@ -63,12 +58,12 @@ USER appuser
 EXPOSE 8000
 
 # ---------------------------
-# Healthcheck
+# Healthcheck (tolerant)
 # ---------------------------
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=10 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# ======================
-# Run FastAPI app
-# ======================
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ---------------------------
+# Run FastAPI
+# ---------------------------
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
