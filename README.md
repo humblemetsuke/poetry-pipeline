@@ -3,6 +3,8 @@ Poetry-Pipeline: Secure FastAPI with Docker & CI/CD
 
 Project Overview
 
+![CI](https://github.com/humblemetsuke/poetry-pipeline/actions/workflows/ci-cd.yml/badge.svg)
+
 Poetry-Pipeline is a secure, production-ready FastAPI application packaged with Docker, designed for DevOps best practices. It features:
 
 CI/CD with GitHub Actions
