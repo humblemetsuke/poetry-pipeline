@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: poetry-pipeline
   DOCKER_REGISTRY: ghcr.io
   DOCKER_REPOSITORY: ${{ github.repository }}
-  SERVICE_NAME: api # Service name from docker-compose.yml
+  SERVICE_NAME: api # matches docker-compose.yml service
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   # ==========================
-  # 1️⃣ Validation: linting, tests, SBOM
+  #  Validation: linting, tests, SBOM
   # ==========================
   validate:
     runs-on: ubuntu-latest
@@ -44,7 +44,12 @@ jobs:
 
       - run: poetry install --with dev --no-interaction
 
-      - run: poetry run pre-commit run --all-files
+      # -------------------------
+      # Idempotent pre-commit check
+      # -------------------------
+      - name: Run pre-commit hooks (idempotent)
+        run: |
+          poetry run pre-commit run --all-files --show-diff-on-failure --color=always
 
       - run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -73,7 +78,7 @@ jobs:
             sbom.json
 
   # ==========================
-  # 2️⃣ Docker Compose test with dynamic host port
+  # Docker Compose test (dynamic port)
   # ==========================
   docker-compose-test:
     runs-on: ubuntu-latest
@@ -100,7 +105,6 @@ jobs:
           echo "Starting container on dynamic port $PORT"
           docker compose -f docker-compose.yml up -d
 
-          # Get container ID for the service
           CONTAINER=$(docker compose ps -q $SERVICE_NAME)
 
           echo "Waiting for container '$SERVICE_NAME' to become healthy..."
@@ -114,13 +118,13 @@ jobs:
             sleep 2
           done
 
-          # Final check via dynamic host port
+          # Final check using dynamic port
           curl -f http://localhost:$PORT/health
 
           docker compose -f docker-compose.yml down
 
   # ==========================
-  # 3️⃣ Publish Docker image to GHCR
+  # Publish Docker image to GHCR
   # ==========================
   publish:
     needs: docker-compose-test
