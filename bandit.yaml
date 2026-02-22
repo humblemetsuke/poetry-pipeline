@@ -1,0 +1,22 @@
+# =================================================
+# Bandit configuration for pre-commit and CI
+# =================================================
+
+# Exclude paths that are not part of your source code
+exclude:
+  - .venv
+  - venv
+  - build
+  - dist
+  - .mypy_cache
+  - .pytest_cache
+  - tests
+
+# Only scan your source code folder (adjust if your code is in 'src' or 'app')
+skips:
+  - B101 # assert_used
+  - B102 # exec_used
+
+# Optional: increase output readability
+format: yaml
+quiet: true

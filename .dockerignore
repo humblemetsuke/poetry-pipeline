@@ -1,0 +1,45 @@
+# ========================
+# Node modules & caches
+# ========================
+node_modules/
+node_modules/.cache/
+
+# ========================
+# Python virtual environments & build artifacts
+# ========================
+.venv/
+venv/
+build/
+dist/
+*.pyc
+__pycache__/
+
+# ========================
+# Sphinx build artifacts
+# ========================
+docs/_build/
+
+# ========================
+# IDE / editor / OS files
+# ========================
+.idea/
+*.swp
+*.DS_Store
+
+# ========================
+# Git / version control
+# ========================
+.git/
+.gitignore
+
+# ========================
+# Environment / secrets
+# ========================
+.env
+*.env
+
+# ========================
+# Logs & temp files
+# ========================
+*.log
+*.tmp

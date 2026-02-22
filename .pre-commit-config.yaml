@@ -1,0 +1,169 @@
+# ============================================================
+# Pre-commit configuration
+# ============================================================
+
+repos:
+  # -------------------------
+  # Quick sanity checks (fast, fail early)
+  # -------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(docs/_build/|node_modules)
+      - id: end-of-file-fixer
+        exclude: ^(docs/_build/|node_modules)
+      - id: check-yaml
+      - id: check-added-large-files
+        exclude: ^(node_modules|\.bandit-baseline\.json)
+
+  # -------------------------
+  # Code formatting
+  # -------------------------
+  - repo: https://github.com/psf/black
+    rev: 26.1.0
+    hooks:
+      - id: black
+        exclude: '^\.venv/'
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        exclude: '^\.venv/'
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: \.(json|yml|yaml|md|js|ts)$
+        exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
+
+  # -------------------------
+  # Lightweight linting & typing
+  # -------------------------
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        exclude: '^\.venv/'
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+        exclude: '^\.venv/'
+
+  # -------------------------
+  # Commit message linting
+  # -------------------------
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: Lint commit messages
+        entry: bash -c 'npx commitlint --edit "$1"' --
+        language: system
+        stages: [commit-msg]
+
+  # -------------------------
+  # Heavy static analysis & security (pre-push)
+  # -------------------------
+  - repo: https://github.com/PyCQA/pylint
+    rev: v4.0.5
+    hooks:
+      - id: pylint
+        additional_dependencies:
+          - setuptools>=68
+          - wheel
+        files: ^(\.|src)/
+        stages: [pre-push]
+
+  - repo: local
+    hooks:
+      - id: radon-cc
+        name: Check Cyclomatic Complexity with Radon
+        entry: poetry run radon cc .
+        language: system
+        args:
+          - --min
+          - C
+          - -s
+          - -a
+          - --exclude
+          - "venv,.venv,build,dist,.mypy_cache,.pytest_cache"
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: vulture
+        name: Detect unused code with Vulture
+        entry: python hooks/vulture-wrapper.py
+        language: system
+        pass_filenames: true
+        types: [python]
+        args:
+          - --exclude
+          - docs/,docs/conf.py,venv,.venv,build,dist,.mypy_cache,.pytest_cache,.pre-commit-config.yaml
+          - --ignore-names
+          - read_root,create_item,update_item,delete_item
+        stages: [pre-push]
+
+      - id: bandit
+        name: Security scan with Bandit
+        entry: bandit -r . -x ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests" --baseline .bandit-baseline.json
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: pytest-coverage
+        name: Run pytest with coverage
+        entry: poetry run pytest --cov=app --cov-fail-under=80
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      # -------------------------
+      # Environment & documentation
+      # -------------------------
+      - id: block-env-files
+        name: Block .env files
+        language: python
+        entry: hooks/block_env.py
+        files: (^|/)\.env(\.[a-zA-Z0-9_-]+|$)
+
+      - id: build-sphinx
+        name: Build Sphinx docs
+        entry: poetry run python -m sphinx -b html docs docs/_build/html
+        language: system
+        pass_filenames: false
+        files: \.(rst|md)$
+        exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
+
+      # -------------------------
+      # Docker & container checks
+      # -------------------------
+      - id: hadolint
+        name: Lint Dockerfile with Hadolint
+        entry: hadolint Dockerfile
+        language: system
+        files: ^Dockerfile$
+
+      - id: trivy-scan-image
+        name: Scan Docker image for OS vulnerabilities
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: trivy-scan-deps
+        name: Scan Python dependencies in Docker image
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy image --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL $IMAGE_TAG'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: cosign-sign
+        name: Sign Docker image with Cosign
+        entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && cosign sign --key cosign.key $IMAGE_TAG'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
