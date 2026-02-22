@@ -4,26 +4,34 @@
 
 repos:
   # -------------------------
-  # Quick sanity checks (fast, fail early)
+  # 1️⃣ Quick sanity checks (fail fast)
   # -------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      # Remove trailing whitespace in files
       - id: trailing-whitespace
         exclude: ^(docs/_build/|node_modules)
+
+      # Ensure files end with a newline
       - id: end-of-file-fixer
         exclude: ^(docs/_build/|node_modules)
+
+      # Validate YAML files for syntax errors
       - id: check-yaml
+
+      # Prevent accidentally committing huge files
       - id: check-added-large-files
         exclude: ^(node_modules|\.bandit-baseline\.json)
 
   # -------------------------
-  # Code formatting
+  # 2️⃣ Code formatting
   # -------------------------
   - repo: https://github.com/psf/black
     rev: 26.1.0
     hooks:
       - id: black
+        # Ignore virtual environments
         exclude: '^\.venv/'
 
   - repo: https://github.com/pre-commit/mirrors-isort
@@ -40,7 +48,7 @@ repos:
         exclude: '(^\.venv/|^node_modules/|^docs/_build/)'
 
   # -------------------------
-  # Lightweight linting & typing
+  # 3️⃣ Lightweight linting & typing
   # -------------------------
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
@@ -55,7 +63,7 @@ repos:
         exclude: '^\.venv/'
 
   # -------------------------
-  # Commit message linting
+  # 4️⃣ Commit message linting
   # -------------------------
   - repo: local
     hooks:
@@ -66,7 +74,7 @@ repos:
         stages: [commit-msg]
 
   # -------------------------
-  # Heavy static analysis & security (pre-push)
+  # 5️⃣ Heavy static analysis & security (pre-push)
   # -------------------------
   - repo: https://github.com/PyCQA/pylint
     rev: v4.0.5
@@ -80,6 +88,7 @@ repos:
 
   - repo: local
     hooks:
+      # Cyclomatic Complexity check
       - id: radon-cc
         name: Check Cyclomatic Complexity with Radon
         entry: poetry run radon cc .
@@ -94,6 +103,7 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      # Detect unused code
       - id: vulture
         name: Detect unused code with Vulture
         entry: python hooks/vulture-wrapper.py
@@ -107,6 +117,7 @@ repos:
           - read_root,create_item,update_item,delete_item
         stages: [pre-push]
 
+      # Security scan with Bandit
       - id: bandit
         name: Security scan with Bandit
         entry: bandit -r . -x ".venv,venv,build,dist,.mypy_cache,.pytest_cache,tests" --baseline .bandit-baseline.json
@@ -114,6 +125,7 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      # Run tests with coverage enforcement
       - id: pytest-coverage
         name: Run pytest with coverage
         entry: poetry run pytest --cov=app --cov-fail-under=80
@@ -121,15 +133,19 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
-      # -------------------------
-      # Environment & documentation
-      # -------------------------
+  # -------------------------
+  # 6️⃣ Environment & documentation
+  # -------------------------
+  - repo: local
+    hooks:
+      # Block accidental commits of .env files
       - id: block-env-files
         name: Block .env files
         language: python
         entry: hooks/block_env.py
         files: (^|/)\.env(\.[a-zA-Z0-9_-]+|$)
 
+      # Build Sphinx documentation on .rst or .md changes
       - id: build-sphinx
         name: Build Sphinx docs
         entry: poetry run python -m sphinx -b html docs docs/_build/html
@@ -138,15 +154,20 @@ repos:
         files: \.(rst|md)$
         exclude: ^(\.venv|venv|\.mypy_cache|\.pytest_cache|build|dist)/
 
-      # -------------------------
-      # Docker & container checks
-      # -------------------------
+  # -------------------------
+  # 7️⃣ Docker & container checks
+  # -------------------------
+  - repo: local
+    hooks:
       - id: hadolint
         name: Lint Dockerfile with Hadolint
         entry: hadolint Dockerfile
         language: system
         files: ^Dockerfile$
 
+  - repo: local
+    hooks:
+      # Scan Docker image filesystem for vulnerabilities
       - id: trivy-scan-image
         name: Scan Docker image for OS vulnerabilities
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy fs --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL --scanners vuln poetry.lock'
@@ -154,6 +175,7 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      # Scan Python dependencies in Docker image
       - id: trivy-scan-deps
         name: Scan Python dependencies in Docker image
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && trivy image --cache-dir ~/.cache/trivy --severity HIGH,CRITICAL $IMAGE_TAG'
@@ -161,6 +183,7 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      # Sign Docker image using Cosign
       - id: cosign-sign
         name: Sign Docker image with Cosign
         entry: bash -c 'IMAGE_TAG="my-image:$(git rev-parse --short HEAD)" && cosign sign --key cosign.key $IMAGE_TAG'
