@@ -127,10 +127,10 @@ jobs:
 
       - name: Start container for testing
         run: |
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d
           sleep 10
           curl -f http://localhost:8000/health
-          docker-compose -f docker-compose.yml down
+          docker compose -f docker-compose.yml down
 
   # ==========================
   # Publish job: runs only on main
