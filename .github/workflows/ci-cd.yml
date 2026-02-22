@@ -81,7 +81,7 @@ jobs:
       # Install project dependencies
       # --------------------------
       - name: Install dependencies (including dev)
-        run: poetry install --with dev --no-interaction --no-root
+        run: poetry install --with dev --no-interaction
 
       # --------------------------
       # Run pre-commit hooks for formatting, linting, static analysis
@@ -96,8 +96,9 @@ jobs:
       # --------------------------
       - name: Run tests with coverage
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           poetry run pytest \
-            --cov=poetry_pipeline \
+            --cov=app \
             --cov-report=term \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=80 \
