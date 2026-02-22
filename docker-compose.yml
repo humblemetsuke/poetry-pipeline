@@ -10,7 +10,7 @@ services:
     environment:
       ENVIRONMENT: production # Matches Dockerfile production setting
     ports:
-      - "127.0.0.1:8000:8000" # Expose FastAPI port only
+      - "${PORT:-8000}:8000"
     networks:
       - internal # Internal network for isolation
     restart: unless-stopped # Keep container alive if it crashes
@@ -42,6 +42,8 @@ services:
           memory: 128M
     read_only: true # Read-only filesystem for security
     tmpfs: /tmp # Writable temp space for runtime needs
+    volumes:
+      - logs:/app/logs
     ulimits:
       nproc: 100
       nofile:
@@ -54,3 +56,10 @@ services:
 networks:
   internal:
     driver: bridge
+
+# =============================
+# Add writable volume for logs
+# =============================
+
+volumes:
+  logs: {} # declare the named volume
